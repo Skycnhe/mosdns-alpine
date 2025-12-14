@@ -2,8 +2,8 @@
 
 # ==========================================
 # Alpine Linux MosDNS 一键安装脚本
-# 特性: 强制删除旧文件，重新下载
-# 镜像源: gh-proxy.org (全局加速：程序+规则)
+# 模式: GitHub 直连 (无加速)
+# 特性: 强制清理旧文件，全新安装
 # ==========================================
 
 # 1. 遇到错误立即停止
@@ -19,7 +19,8 @@ PLAIN='\033[0m'
 MOSDNS_VERSION="v5.3.3"
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-GH_PROXY="https://gh-proxy.org/"
+
+# === 已移除加速镜像变量 ===
 
 log() { echo -e "${GREEN}[Info]${PLAIN} $1"; }
 err() { echo -e "${RED}[Error]${PLAIN} $1"; exit 1; }
@@ -37,6 +38,8 @@ log "检测架构: $ARCH"
 
 # === 环境准备 ===
 log "配置基础环境..."
+# APK 软件源依然保留阿里云，为了保证基础依赖(curl/wget)能快速安装
+# 如果你在海外，可以注释掉下面这一行
 sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 apk update || true
 apk add curl wget tar unzip ca-certificates tzdata
@@ -44,25 +47,23 @@ apk add curl wget tar unzip ca-certificates tzdata
 cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime 2>/dev/null || true
 echo "Asia/Shanghai" > /etc/timezone
 
-# === 下载 MosDNS (强制清理旧文件) ===
-log "准备下载 MosDNS ($MOSDNS_VERSION)..."
+# === 下载 MosDNS (GitHub 直连) ===
+log "准备下载 MosDNS ($MOSDNS_VERSION) [GitHub 直连]..."
 mkdir -p ${WORK_DIR}
 cd /tmp
 
 # [清理] 强制删除旧的安装包和解压残留
 if ls mosdns* 1> /dev/null 2>&1; then
-    log "清理旧安装包..."
     rm -rf mosdns*
 fi
 
 # [清理] 强制删除旧的二进制程序
 if [ -f "${BIN_DIR}/mosdns" ]; then
-    log "清理旧程序..."
     rm -f "${BIN_DIR}/mosdns"
 fi
 
-# [下载] 使用加速
-URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${ARCH}.zip"
+# [下载] 无加速
+URL="https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${ARCH}.zip"
 log "URL: $URL"
 wget -O mosdns.zip "$URL"
 
@@ -80,8 +81,8 @@ fi
 chmod +x ${BIN_DIR}/mosdns
 log "MosDNS 主程序安装完成"
 
-# === 下载规则文件 (强制清理旧文件) ===
-log "准备下载 GeoIP/GeoSite [使用镜像加速]..."
+# === 下载规则文件 (GitHub 直连) ===
+log "准备下载 GeoIP/GeoSite [GitHub 直连]..."
 cd ${WORK_DIR}
 
 # [清理] 强制删除旧的规则文件
@@ -92,12 +93,12 @@ if [ -f "geosite.dat" ]; then
     rm -f geosite.dat
 fi
 
-# [下载] 使用加速 (此处已添加 GH_PROXY)
+# [下载] 无加速
 log "正在下载 geoip.dat..."
-wget -O geoip.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+wget -O geoip.dat "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
 
 log "正在下载 geosite.dat..."
-wget -O geosite.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+wget -O geosite.dat "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
 
 # === 生成配置 ===
 log "重写 config.yaml..."
@@ -175,7 +176,7 @@ if pgrep -x "mosdns" > /dev/null; then
     echo "---------------------------------------"
     echo -e "${GREEN}安装成功!${PLAIN}"
     echo -e "程序版本: $MOSDNS_VERSION"
-    echo -e "规则文件: 已更新 (gh-proxy.org)"
+    echo -e "下载方式: GitHub 直连"
     echo -e "端口: 5335"
     echo -e "测试: dig @127.0.0.1 -p 5335 www.baidu.com"
     echo "---------------------------------------"
