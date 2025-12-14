@@ -3,7 +3,7 @@
 # ==========================================
 # Alpine Linux MosDNS 一键安装脚本 (国内优化版)
 # 版本: v5.3.3
-# 镜像: gh-proxy.org
+# 镜像: gh-proxy.org (已更新)
 # ==========================================
 
 # 颜色定义
@@ -16,7 +16,7 @@ PLAIN='\033[0m'
 MOSDNS_VERSION="v5.3.3"
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-# === 修改处：更换为 gh-proxy.org ===
+# === 修改处：指定为 gh-proxy.org ===
 GH_PROXY="https://gh-proxy.org/" 
 
 log() {
@@ -33,7 +33,7 @@ if [ "$(id -u)" != "0" ]; then
     err "请使用 root 用户运行此脚本！"
 fi
 
-# 2. 架构检测 (自动适配 amd64 或 arm64)
+# 2. 架构检测
 arch=$(uname -m)
 case $arch in
     x86_64)
@@ -63,15 +63,15 @@ log "正在下载 MosDNS ($MOSDNS_VERSION)..."
 mkdir -p ${WORK_DIR}
 cd /tmp
 
-# 拼接下载链接 (自动匹配架构)
-# 最终链接示例: https://gh-proxy.org/https://github.com/IrineSistiana/mosdns/releases/download/v5.3.3/mosdns-linux-arm64.zip
+# 拼接下载链接
+# 链接格式: https://gh-proxy.org/https://github.com/...
 DOWNLOAD_URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${MOSDNS_ARCH}.zip"
 
 log "下载链接: $DOWNLOAD_URL"
 wget -O mosdns.zip ${DOWNLOAD_URL}
 
 if [ $? -ne 0 ]; then
-    err "MosDNS 下载失败，请检查网络或更换加速镜像。"
+    err "MosDNS 下载失败，请尝试更换其他加速镜像 (如 ghfast.top)。"
 fi
 
 unzip -o mosdns.zip
@@ -185,7 +185,6 @@ echo "------------------------------------------------"
 if pgrep -x "mosdns" > /dev/null; then
     echo -e "${GREEN}MosDNS 安装并启动成功！${PLAIN}"
     echo -e "镜像源: ${GH_PROXY}"
-    echo -e "版本: ${MOSDNS_VERSION}"
     echo -e "监听端口: ${YELLOW}5335${PLAIN}"
     echo -e "测试命令: dig @127.0.0.1 -p 5335 www.baidu.com"
 else
