@@ -3,7 +3,7 @@
 # ==========================================
 # Alpine Linux MosDNS 一键安装脚本 (国内优化版)
 # 版本: v5.3.3
-# 镜像: ghfast.top
+# 镜像: gh-proxy.org
 # ==========================================
 
 # 颜色定义
@@ -13,12 +13,11 @@ YELLOW='\033[0;33m'
 PLAIN='\033[0m'
 
 # 变量定义
-# === 修改处：版本更新为 v5.3.3 ===
 MOSDNS_VERSION="v5.3.3"
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-# === 加速镜像 ===
-GH_PROXY="https://ghfast.top/" 
+# === 修改处：更换为 gh-proxy.org ===
+GH_PROXY="https://gh-proxy.org/" 
 
 log() {
     echo -e "${GREEN}[Info]${PLAIN} $1"
@@ -65,7 +64,7 @@ mkdir -p ${WORK_DIR}
 cd /tmp
 
 # 拼接下载链接 (自动匹配架构)
-# 最终链接类似于: https://ghfast.top/https://github.com/IrineSistiana/mosdns/releases/download/v5.3.3/mosdns-linux-arm64.zip
+# 最终链接示例: https://gh-proxy.org/https://github.com/IrineSistiana/mosdns/releases/download/v5.3.3/mosdns-linux-arm64.zip
 DOWNLOAD_URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${MOSDNS_ARCH}.zip"
 
 log "下载链接: $DOWNLOAD_URL"
@@ -76,13 +75,13 @@ if [ $? -ne 0 ]; then
 fi
 
 unzip -o mosdns.zip
-# 处理解压后的文件 (v5.3.3 解压后通常直接包含二进制文件或在文件夹内，这里做个兼容判断)
+# 智能查找二进制文件 (兼容不同版本的解压结构)
 if [ -f "mosdns" ]; then
     mv mosdns ${BIN_DIR}/mosdns
 elif [ -d "mosdns-linux-${MOSDNS_ARCH}" ]; then
     mv mosdns-linux-${MOSDNS_ARCH}/mosdns ${BIN_DIR}/mosdns
 else
-    # 尝试查找当前目录下所有的 mosdns 文件
+    # 深度查找
     find . -type f -name "mosdns" -exec mv {} ${BIN_DIR}/mosdns \;
 fi
 
@@ -97,8 +96,8 @@ log "MosDNS 二进制文件安装完成"
 # 5. 下载资源文件 (GeoIP / GeoSite)
 log "正在下载规则文件 (geoip/geosite)..."
 cd ${WORK_DIR}
-wget -O geoip.dat "${GH_PROXY}https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat"
-wget -O geosite.dat "${GH_PROXY}https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
+wget -O geoip.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+wget -O geosite.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
 
 if [ ! -f "${WORK_DIR}/geoip.dat" ] || [ ! -f "${WORK_DIR}/geosite.dat" ]; then
     err "规则文件下载失败"
@@ -185,7 +184,8 @@ service mosdns restart
 echo "------------------------------------------------"
 if pgrep -x "mosdns" > /dev/null; then
     echo -e "${GREEN}MosDNS 安装并启动成功！${PLAIN}"
-    echo -e "当前版本: ${MOSDNS_VERSION}"
+    echo -e "镜像源: ${GH_PROXY}"
+    echo -e "版本: ${MOSDNS_VERSION}"
     echo -e "监听端口: ${YELLOW}5335${PLAIN}"
     echo -e "测试命令: dig @127.0.0.1 -p 5335 www.baidu.com"
 else
