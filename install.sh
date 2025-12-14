@@ -2,7 +2,8 @@
 
 # ==========================================
 # Alpine Linux MosDNS 一键安装脚本 (国内优化版)
-# 镜像源: ghfast.top
+# 版本: v5.3.3
+# 镜像: ghfast.top
 # ==========================================
 
 # 颜色定义
@@ -12,10 +13,11 @@ YELLOW='\033[0;33m'
 PLAIN='\033[0m'
 
 # 变量定义
-MOSDNS_VERSION="v5.3.1"
+# === 修改处：版本更新为 v5.3.3 ===
+MOSDNS_VERSION="v5.3.3"
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-# === 修改处：更换为 ghfast.top ===
+# === 加速镜像 ===
 GH_PROXY="https://ghfast.top/" 
 
 log() {
@@ -32,7 +34,7 @@ if [ "$(id -u)" != "0" ]; then
     err "请使用 root 用户运行此脚本！"
 fi
 
-# 2. 架构检测
+# 2. 架构检测 (自动适配 amd64 或 arm64)
 arch=$(uname -m)
 case $arch in
     x86_64)
@@ -57,12 +59,13 @@ cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 echo "Asia/Shanghai" > /etc/timezone
 log "系统环境配置完成"
 
-# 4. 下载并安装 MosDNS (使用 ghfast.top)
+# 4. 下载并安装 MosDNS
 log "正在下载 MosDNS ($MOSDNS_VERSION)..."
 mkdir -p ${WORK_DIR}
 cd /tmp
 
-# 拼接下载链接
+# 拼接下载链接 (自动匹配架构)
+# 最终链接类似于: https://ghfast.top/https://github.com/IrineSistiana/mosdns/releases/download/v5.3.3/mosdns-linux-arm64.zip
 DOWNLOAD_URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${MOSDNS_ARCH}.zip"
 
 log "下载链接: $DOWNLOAD_URL"
@@ -73,16 +76,29 @@ if [ $? -ne 0 ]; then
 fi
 
 unzip -o mosdns.zip
-mv mosdns ${BIN_DIR}/mosdns
+# 处理解压后的文件 (v5.3.3 解压后通常直接包含二进制文件或在文件夹内，这里做个兼容判断)
+if [ -f "mosdns" ]; then
+    mv mosdns ${BIN_DIR}/mosdns
+elif [ -d "mosdns-linux-${MOSDNS_ARCH}" ]; then
+    mv mosdns-linux-${MOSDNS_ARCH}/mosdns ${BIN_DIR}/mosdns
+else
+    # 尝试查找当前目录下所有的 mosdns 文件
+    find . -type f -name "mosdns" -exec mv {} ${BIN_DIR}/mosdns \;
+fi
+
+if [ ! -f "${BIN_DIR}/mosdns" ]; then
+    err "解压后未找到 mosdns 二进制文件，安装失败。"
+fi
+
 chmod +x ${BIN_DIR}/mosdns
-rm -f mosdns.zip
+rm -rf mosdns.zip mosdns-linux-*
 log "MosDNS 二进制文件安装完成"
 
 # 5. 下载资源文件 (GeoIP / GeoSite)
 log "正在下载规则文件 (geoip/geosite)..."
 cd ${WORK_DIR}
-wget -O geoip.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
-wget -O geosite.dat "${GH_PROXY}https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+wget -O geoip.dat "${GH_PROXY}https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat"
+wget -O geosite.dat "${GH_PROXY}https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
 
 if [ ! -f "${WORK_DIR}/geoip.dat" ] || [ ! -f "${WORK_DIR}/geosite.dat" ]; then
     err "规则文件下载失败"
@@ -169,6 +185,7 @@ service mosdns restart
 echo "------------------------------------------------"
 if pgrep -x "mosdns" > /dev/null; then
     echo -e "${GREEN}MosDNS 安装并启动成功！${PLAIN}"
+    echo -e "当前版本: ${MOSDNS_VERSION}"
     echo -e "监听端口: ${YELLOW}5335${PLAIN}"
     echo -e "测试命令: dig @127.0.0.1 -p 5335 www.baidu.com"
 else
