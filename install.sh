@@ -165,4 +165,32 @@ name="mosdns"
 command="${BIN_DIR}/mosdns"
 command_args="start -c ${WORK_DIR}/config.yaml -d ${WORK_DIR}"
 command_background=true
-pidfi
+pidfile="/run/mosdns.pid"
+depend() {
+    need net
+    after firewall
+}
+EOF
+chmod +x /etc/init.d/mosdns
+rc-update add mosdns default > /dev/null
+
+# === 第八步：启动测试 ===
+log "正在启动..."
+service mosdns restart
+sleep 2
+
+if pgrep -x "mosdns" > /dev/null; then
+    echo "---------------------------------------"
+    echo -e "${GREEN}修复并启动成功！${PLAIN}"
+    echo -e "当前版本: $CURRENT_VER"
+    echo -e "下载方式: GitHub 直连"
+    echo -e "测试命令: dig @127.0.0.1 -p 5335 www.baidu.com"
+    echo "---------------------------------------"
+else
+    echo "---------------------------------------"
+    echo -e "${RED}启动依然失败${PLAIN}"
+    echo -e "请查看日志: cat /var/log/mosdns.log"
+    echo -e "建议：如果再次失败，请在电脑下载 zip 包手动上传到 /tmp 进行安装。"
+    echo "---------------------------------------"
+    exit 1
+fi
