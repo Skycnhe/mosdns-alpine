@@ -14,7 +14,7 @@ PLAIN='\033[0m'
 MOSDNS_VERSION="v5.3.1" # 指定版本，确保稳定性
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-GH_PROXY="https://mirror.ghproxy.com/" # GitHub 加速镜像
+GH_PROXY="https://gh-proxy.org/" # GitHub 加速镜像
 
 log() {
     echo -e "${GREEN}[Info]${PLAIN} $1"
@@ -61,7 +61,7 @@ log "正在下载 MosDNS ($MOSDNS_VERSION)..."
 mkdir -p ${WORK_DIR}
 cd /tmp
 
-DOWNLOAD_URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/${MOSDNS_VERSION}/mosdns-linux-${MOSDNS_ARCH}.zip"
+DOWNLOAD_URL="${GH_PROXY}https://github.com/IrineSistiana/mosdns/releases/download/v5.3.3/mosdns-linux-arm64.zip"
 
 wget -O mosdns.zip ${DOWNLOAD_URL}
 if [ $? -ne 0 ]; then
