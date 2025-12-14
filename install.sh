@@ -14,7 +14,7 @@ PLAIN='\033[0m'
 MOSDNS_VERSION="v5.3.1" # 指定版本，确保稳定性
 WORK_DIR="/etc/mosdns"
 BIN_DIR="/usr/bin"
-GH_PROXY="https://gh-proxy.org/" # GitHub 加速镜像
+GH_PROXY="https://ghfast.top/" # GitHub 加速镜像
 
 log() {
     echo -e "${GREEN}[Info]${PLAIN} $1"
